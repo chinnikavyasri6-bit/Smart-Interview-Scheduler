@@ -19,8 +19,13 @@ const {
 } = require("../services/notificationService");
 
 const {
-  createInterviewConfirmationAuditLogs
+  createInterviewConfirmationAuditLogs,
+  createRescheduleAuditLog
 } = require("../services/auditService");
+
+const {
+  rescheduleInterview
+} = require("../services/reschedulingService");
 
 const createInterview = async (req, res) => {
   try {
@@ -371,10 +376,94 @@ const confirmInterview = async (req, res) => {
   }
 };
 
+const rescheduleInterviewController =
+  async (req, res) => {
+
+    try {
+
+      const { id } = req.params;
+      const { start, end } = req.body;
+
+      if (
+        !mongoose.Types.ObjectId.isValid(id)
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid interview ID"
+        });
+      }
+
+      if (!start || !end) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "start and end are required"
+        });
+      }
+
+      const result =
+        await rescheduleInterview({
+          interviewId: id,
+          start,
+          end
+        });
+
+      const notifications =
+        await createInterviewNotifications({
+          interview: result.interview
+        });
+
+      const auditLog =
+        await createRescheduleAuditLog({
+          interview: result.interview,
+          confirmedBy:
+            result.interview.recruiter._id ||
+            result.interview.recruiter,
+          start: result.interview.selectedSlot.start,
+          end: result.interview.selectedSlot.end
+        });
+
+      res.status(200).json({
+        success: true,
+        message:
+          "Interview rescheduled successfully",
+        data: {
+          interview: result.interview,
+          calendarEvents:
+            result.calendarEvents,
+          notifications,
+          auditLog
+        }
+      });
+
+    } catch (error) {
+
+      console.error(
+        "Reschedule interview error:",
+        error.message
+      );
+
+      res.status(
+        error.statusCode || 500
+      ).json({
+        success: false,
+        message:
+          error.statusCode
+            ? error.message
+            : "Failed to reschedule interview",
+        error:
+          error.statusCode
+            ? undefined
+            : error.message
+      });
+    }
+  };
+
 module.exports = {
   createInterview,
   getInterviews,
   getInterviewById,
   scheduleInterview,
-  confirmInterview
+  confirmInterview,
+  rescheduleInterviewController
 };

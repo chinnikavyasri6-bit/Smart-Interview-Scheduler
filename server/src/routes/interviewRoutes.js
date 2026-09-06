@@ -5,7 +5,8 @@ const {
   getInterviews,
   getInterviewById,
   scheduleInterview,
-  confirmInterview
+  confirmInterview,
+  rescheduleInterviewController
 } = require("../controllers/interviewController");
 
 const validate = require("../middlewares/validate");
@@ -32,6 +33,11 @@ router.post(
 router.post(
   "/:id/confirm",
   confirmInterview
+);
+
+router.post(
+  "/:id/reschedule",
+  rescheduleInterviewController
 );
 
 router.get("/:id", getInterviewById);

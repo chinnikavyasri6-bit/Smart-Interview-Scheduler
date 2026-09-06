@@ -62,7 +62,26 @@ const createInterviewConfirmationAuditLogs =
     return logs;
   };
 
+  const createRescheduleAuditLog = async ({
+  interview,
+  confirmedBy,
+  start,
+  end
+}) => {
+
+  return createAuditLog({
+    user: confirmedBy,
+    interview: interview._id,
+    action: "interview_rescheduled",
+    details: {
+      start,
+      end
+    }
+  });
+};
+
 module.exports = {
   createAuditLog,
-  createInterviewConfirmationAuditLogs
+  createInterviewConfirmationAuditLogs,
+  createRescheduleAuditLog
 };
