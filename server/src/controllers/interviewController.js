@@ -191,6 +191,35 @@ const getInterviewById = async (req, res) => {
       });
     }
 
+    const currentUserId = req.user.userId;
+    const currentUserRole = req.user.role;
+
+    let hasAccess = false;
+
+    if (currentUserRole === "recruiter") {
+      hasAccess =
+        interview.recruiter._id.toString() === currentUserId;
+    }
+
+    if (currentUserRole === "candidate") {
+      hasAccess =
+        interview.candidate._id.toString() === currentUserId;
+    }
+
+    if (currentUserRole === "interviewer") {
+      hasAccess = interview.interviewers.some(
+        (interviewer) =>
+          interviewer._id.toString() === currentUserId
+      );
+    }
+
+    if (!hasAccess) {
+      return res.status(403).json({
+        success: false,
+        message: "You do not have permission to view this interview"
+      });
+    }
+
     res.status(200).json({
       success: true,
       data: interview
@@ -212,7 +241,7 @@ const getInterviewById = async (req, res) => {
 const scheduleInterview = async (req, res) => {
   try {
     const { id } = req.params;
-    const { start, end } = req.body;
+    const { start, end } = req.body || {};
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
