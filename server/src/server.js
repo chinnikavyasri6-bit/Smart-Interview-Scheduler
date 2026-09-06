@@ -3,6 +3,8 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const path = require("path");
 
+const connectDatabase = require("./config/database");
+
 // Load environment variables from server/.env
 dotenv.config({
   path: path.join(__dirname, "../.env")
@@ -33,6 +35,19 @@ app.get("/api/health", (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+// Start server
+const startServer = async () => {
+  try {
+    await connectDatabase();
+
+    app.listen(PORT, () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+    });
+  } catch (error) {
+    console.error("Failed to start server:");
+    console.error(error.message);
+    process.exit(1);
+  }
+};
+
+startServer();
