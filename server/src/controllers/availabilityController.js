@@ -91,6 +91,13 @@ const getUserAvailability = async (req, res) => {
       });
     }
 
+    if (userId !== req.user.userId) {
+      return res.status(403).json({
+        success: false,
+        message: "You do not have permission to view this availability"
+      });
+    }
+
     const availability = await Availability.find({
       user: userId
     }).sort({ start: 1 });
@@ -108,8 +115,7 @@ const getUserAvailability = async (req, res) => {
 
     res.status(500).json({
       success: false,
-      message: "Failed to fetch availability",
-      error: error.message
+      message: "Failed to fetch availability"
     });
   }
 };
