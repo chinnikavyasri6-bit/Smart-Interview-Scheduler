@@ -1,18 +1,9 @@
 const { z } = require("zod");
 
 const createInterviewSchema = z.object({
-  title: z
-    .string()
-    .trim()
-    .min(2, "Title must be at least 2 characters"),
+  title: z.string().trim().min(2, "Title must be at least 2 characters"),
 
-  candidate: z
-    .string()
-    .min(1, "Candidate ID is required"),
-
-  recruiter: z
-    .string()
-    .min(1, "Recruiter ID is required"),
+  candidate: z.string().min(1, "Candidate ID is required"),
 
   interviewers: z
     .array(z.string())
@@ -32,14 +23,9 @@ const createInterviewSchema = z.object({
     ])
     .default("technical"),
 
-  timezone: z
-    .string()
-    .min(1, "Timezone is required"),
+  timezone: z.string().min(1, "Timezone is required"),
 
-  notes: z
-    .string()
-    .optional()
-    .default("")
+  notes: z.string().optional().default("")
 });
 
 module.exports = {

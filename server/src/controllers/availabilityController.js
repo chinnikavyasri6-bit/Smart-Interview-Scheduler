@@ -9,13 +9,14 @@ const {
 const createAvailability = async (req, res) => {
   try {
     const {
-      user,
-      start,
-      end,
-      timezone,
-      source,
-      status
-    } = req.body;
+  start,
+  end,
+  timezone,
+  source,
+  status
+} = req.body;
+
+const user = req.user.userId;
 
     if (!mongoose.Types.ObjectId.isValid(user)) {
       return res.status(400).json({
@@ -26,12 +27,12 @@ const createAvailability = async (req, res) => {
 
     const userExists = await User.findById(user);
 
-    if (!userExists) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found"
-      });
-    }
+if (!userExists) {
+  return res.status(404).json({
+    success: false,
+    message: "User not found"
+  });
+}
 
     const startDate = new Date(start);
     const endDate = new Date(end);

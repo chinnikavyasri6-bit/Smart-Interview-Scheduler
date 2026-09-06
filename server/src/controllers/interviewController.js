@@ -36,15 +36,16 @@ const {
 const createInterview = async (req, res) => {
   try {
     const {
-      title,
-      candidate,
-      recruiter,
-      interviewers,
-      duration,
-      interviewType,
-      timezone,
-      notes
-    } = req.body;
+  title,
+  candidate,
+  interviewers,
+  duration,
+  interviewType,
+  timezone,
+  notes
+} = req.body;
+
+const recruiter = req.user.userId;
 
     // Validate MongoDB IDs
     const allIds = [
