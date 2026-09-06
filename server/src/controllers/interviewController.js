@@ -6,6 +6,14 @@ const {
   generateInterviewSchedule
 } = require("../services/schedulingService");
 
+const {
+  createInterviewCalendarEvents
+} = require("../services/calendarService");
+
+const {
+  confirmInterviewSlot
+} = require("../services/confirmationService");
+
 const createInterview = async (req, res) => {
   try {
     const {
@@ -255,9 +263,97 @@ const scheduleInterview = async (req, res) => {
   }
 };
 
+const confirmInterview = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { start, end } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid interview ID"
+      });
+    }
+
+    if (!start || !end) {
+      return res.status(400).json({
+        success: false,
+        message: "start and end are required"
+      });
+    }
+
+    const selectedStart = new Date(start);
+    const selectedEnd = new Date(end);
+
+    if (
+      Number.isNaN(selectedStart.getTime()) ||
+      Number.isNaN(selectedEnd.getTime())
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid start or end date"
+      });
+    }
+
+    if (selectedEnd <= selectedStart) {
+      return res.status(400).json({
+        success: false,
+        message: "end must be after start"
+      });
+    }
+
+    // Final confirmation of the selected slot
+    const interview =
+      await confirmInterviewSlot({
+        interviewId: id,
+        start,
+        end
+      });
+
+    // Generate an internal meeting link for now.
+    // This will later be replaced with Google Meet.
+    const meetingLink =
+      `http://localhost:5000/meet/${interview._id}`;
+
+    // Create calendar events for all participants
+    const calendarEvents =
+      await createInterviewCalendarEvents({
+        interview,
+        meetingLink
+      });
+
+    res.status(200).json({
+      success: true,
+      message:
+        "Interview confirmed and calendar events created successfully",
+      data: {
+        interview,
+        calendarEvents
+      }
+    });
+
+  } catch (error) {
+    console.error(
+      "Confirm interview error:",
+      error.message
+    );
+
+    res.status(
+      error.statusCode || 500
+    ).json({
+      success: false,
+      message:
+        error.statusCode
+          ? error.message
+          : "Failed to confirm interview slot"
+    });
+  }
+};
+
 module.exports = {
   createInterview,
   getInterviews,
   getInterviewById,
-  scheduleInterview
+  scheduleInterview,
+  confirmInterview
 };
