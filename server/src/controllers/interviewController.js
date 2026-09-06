@@ -2,6 +2,9 @@ const mongoose = require("mongoose");
 
 const Interview = require("../models/Interview");
 const User = require("../models/User");
+const {
+  generateInterviewSchedule
+} = require("../services/schedulingService");
 
 const createInterview = async (req, res) => {
   try {
@@ -178,8 +181,83 @@ const getInterviewById = async (req, res) => {
   }
 };
 
+const scheduleInterview = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { start, end } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid interview ID"
+      });
+    }
+
+    if (!start || !end) {
+      return res.status(400).json({
+        success: false,
+        message: "start and end are required"
+      });
+    }
+
+    const rangeStart = new Date(start);
+    const rangeEnd = new Date(end);
+
+    if (
+      Number.isNaN(rangeStart.getTime()) ||
+      Number.isNaN(rangeEnd.getTime())
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid start or end date"
+      });
+    }
+
+    if (rangeEnd <= rangeStart) {
+      return res.status(400).json({
+        success: false,
+        message: "end must be after start"
+      });
+    }
+
+    const schedule =
+      await generateInterviewSchedule({
+        interviewId: id,
+        rangeStart,
+        rangeEnd
+      });
+
+    res.status(200).json({
+      success: true,
+      message: "Interview schedule generated successfully",
+      data: schedule
+    });
+
+  } catch (error) {
+
+    console.error(
+      "Schedule interview error:",
+      error.message
+    );
+
+    res.status(
+      error.statusCode || 500
+    ).json({
+      success: false,
+      message:
+        error.statusCode
+          ? error.message
+          : "Failed to generate interview schedule",
+      error: error.statusCode
+        ? undefined
+        : error.message
+    });
+  }
+};
+
 module.exports = {
   createInterview,
   getInterviews,
-  getInterviewById
+  getInterviewById,
+  scheduleInterview
 };

@@ -6,6 +6,7 @@ const path = require("path");
 const connectDatabase = require("./config/database");
 const userRoutes = require("./routes/userRoutes");
 const interviewRoutes = require("./routes/interviewRoutes");
+const availabilityRoutes = require("./routes/availabilityRoutes");
 
 // Load environment variables from server/.env
 dotenv.config({
@@ -19,6 +20,10 @@ app.use(cors());
 app.use(express.json());
 app.use("/api/users", userRoutes);
 app.use("/api/interviews", interviewRoutes);
+app.use(
+  "/api/availability",
+  availabilityRoutes
+);
 
 // Root route
 app.get("/", (req, res) => {

@@ -5,21 +5,17 @@ const availabilitySchema = new mongoose.Schema(
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true
+      required: true,
+      index: true
     },
 
-    date: {
+    start: {
       type: Date,
       required: true
     },
 
-    startTime: {
-      type: String,
-      required: true
-    },
-
-    endTime: {
-      type: String,
+    end: {
+      type: Date,
       required: true
     },
 
@@ -28,15 +24,16 @@ const availabilitySchema = new mongoose.Schema(
       required: true
     },
 
-    isAvailable: {
-      type: Boolean,
-      default: true
-    },
-
     source: {
       type: String,
       enum: ["manual", "calendar"],
       default: "manual"
+    },
+
+    status: {
+      type: String,
+      enum: ["available", "unavailable"],
+      default: "available"
     }
   },
   {
@@ -44,9 +41,13 @@ const availabilitySchema = new mongoose.Schema(
   }
 );
 
-const Availability = mongoose.model(
+availabilitySchema.index({
+  user: 1,
+  start: 1,
+  end: 1
+});
+
+module.exports = mongoose.model(
   "Availability",
   availabilitySchema
 );
-
-module.exports = Availability;
