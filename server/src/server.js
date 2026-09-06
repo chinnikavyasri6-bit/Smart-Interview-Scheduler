@@ -4,6 +4,7 @@ const dotenv = require("dotenv");
 const path = require("path");
 
 const connectDatabase = require("./config/database");
+const userRoutes = require("./routes/userRoutes");
 
 // Load environment variables from server/.env
 dotenv.config({
@@ -15,6 +16,7 @@ const app = express();
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use("/api/users", userRoutes);
 
 // Root route
 app.get("/", (req, res) => {
