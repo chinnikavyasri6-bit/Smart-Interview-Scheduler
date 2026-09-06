@@ -143,7 +143,25 @@ const recruiter = req.user.userId;
 
 const getInterviews = async (req, res) => {
   try {
-    const interviews = await Interview.find()
+    const currentUserId = req.user.userId;
+    const currentUserRole = req.user.role;
+
+    let filter = {};
+
+    if (currentUserRole === "recruiter") {
+      filter.recruiter = currentUserId;
+    } else if (currentUserRole === "candidate") {
+      filter.candidate = currentUserId;
+    } else if (currentUserRole === "interviewer") {
+      filter.interviewers = currentUserId;
+    } else {
+      return res.status(403).json({
+        success: false,
+        message: "Invalid user role"
+      });
+    }
+
+    const interviews = await Interview.find(filter)
       .populate("candidate", "name email role timezone")
       .populate("recruiter", "name email role timezone")
       .populate("interviewers", "name email role timezone")
