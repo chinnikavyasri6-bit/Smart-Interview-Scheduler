@@ -15,17 +15,23 @@ const {
 } = require("../services/confirmationService");
 
 const {
-  createInterviewNotifications
+  createInterviewNotifications,
+  createInterviewCancellationNotifications
 } = require("../services/notificationService");
 
 const {
   createInterviewConfirmationAuditLogs,
-  createRescheduleAuditLog
+  createRescheduleAuditLog,
+  createCancellationAuditLog
 } = require("../services/auditService");
 
 const {
   rescheduleInterview
 } = require("../services/reschedulingService");
+
+const {
+  cancelInterview
+} = require("../services/cancellationService");
 
 const createInterview = async (req, res) => {
   try {
@@ -459,11 +465,80 @@ const rescheduleInterviewController =
     }
   };
 
+  const cancelInterviewController =
+  async (req, res) => {
+
+    try {
+
+      const { id } = req.params;
+
+      if (
+        !mongoose.Types.ObjectId.isValid(id)
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid interview ID"
+        });
+      }
+
+      const interview =
+        await cancelInterview({
+          interviewId: id
+        });
+
+      const notifications =
+        await createInterviewCancellationNotifications({
+          interview
+        });
+
+      const auditLog =
+        await createCancellationAuditLog({
+          interview,
+          cancelledBy:
+            interview.recruiter._id ||
+            interview.recruiter
+        });
+
+      res.status(200).json({
+        success: true,
+        message:
+          "Interview cancelled successfully",
+        data: {
+          interview,
+          notifications,
+          auditLog
+        }
+      });
+
+    } catch (error) {
+
+      console.error(
+        "Cancel interview error:",
+        error.message
+      );
+
+      res.status(
+        error.statusCode || 500
+      ).json({
+        success: false,
+        message:
+          error.statusCode
+            ? error.message
+            : "Failed to cancel interview",
+        error:
+          error.statusCode
+            ? undefined
+            : error.message
+      });
+    }
+  };
+
 module.exports = {
   createInterview,
   getInterviews,
   getInterviewById,
   scheduleInterview,
   confirmInterview,
-  rescheduleInterviewController
+  rescheduleInterviewController,
+  cancelInterviewController
 };

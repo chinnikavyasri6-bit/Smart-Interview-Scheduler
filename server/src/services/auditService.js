@@ -80,8 +80,27 @@ const createInterviewConfirmationAuditLogs =
   });
 };
 
+const createCancellationAuditLog =
+  async ({
+    interview,
+    cancelledBy
+  }) => {
+
+    return createAuditLog({
+      user: cancelledBy,
+      interview: interview._id,
+      action: "interview_cancelled",
+      details: {
+        previousSlot:
+          interview.selectedSlot || null,
+        cancelledAt: new Date()
+      }
+    });
+  };
+
 module.exports = {
   createAuditLog,
   createInterviewConfirmationAuditLogs,
-  createRescheduleAuditLog
+  createRescheduleAuditLog,
+  createCancellationAuditLog
 };
