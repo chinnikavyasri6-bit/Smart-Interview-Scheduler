@@ -1,54 +1,51 @@
-# Smart Interview Scheduler
+# 🧠 Smart Interview Scheduler
 
-A smart interview scheduling platform that automates interview coordination between recruiters, candidates, and interviewers.
+> 🚀 An intelligent full-stack interview scheduling platform that automates coordination between recruiters, candidates, and interviewers.
 
-## Features
+## 📌 Overview
 
-- Interview creation
-- Candidate availability
-- Interviewer availability
-- Calendar conflict detection
-- Smart slot generation
-- Slot ranking
-- Interview booking
-- Rescheduling
-- Cancellation
-- Notifications
-- Time-zone handling
-- Google Calendar integration
-- Google Meet integration
-- AI-assisted recommendations
+Scheduling interviews manually can be time-consuming and error-prone.
 
-## Tech Stack
+Recruiters often need to coordinate the availability of multiple participants, check calendars, consider different time zones, avoid scheduling conflicts, send invitations, and handle last-minute changes.
 
-### Frontend
-- React.js
-- Tailwind CSS
-- React Router
+**Smart Interview Scheduler** automates this entire process through an intelligent scheduling workflow.
 
-### Backend
-- Node.js
-- Express.js
+The platform allows recruiters to create interviews and automatically discover suitable interview slots by considering:
 
-### Database
-- MongoDB
-- Mongoose
+- 👤 Candidate availability
+- 👥 Interviewer availability
+- 📅 Existing calendar events
+- ⏰ Working hours
+- 🌍 Time zones
+- ⏱️ Interview duration
+- ⚡ Scheduling conflicts
+- ⭐ Slot scoring and ranking
 
-### Scheduling
-- JavaScript
-- date-fns
-- date-fns-tz
+The system recommends the best available slots and allows recruiters to confirm, reschedule, or cancel interviews.
 
-### Integrations
-- Google Calendar API
-- Google Meet
-- Resend
-- OpenAI API
+---
 
-### Testing
-- Jest
-- Postman
+# 🎯 Problem Statement
 
-### Version Control
-- Git
-- GitHub
+Traditional interview scheduling involves several manual steps:
+
+```text
+Recruiter
+    ↓
+Check Candidate Availability
+    ↓
+Check Interviewer Availability
+    ↓
+Check Calendars
+    ↓
+Compare Time Zones
+    ↓
+Check Working Hours
+    ↓
+Find Common Slots
+    ↓
+Send Invitations
+    ↓
+Wait for Confirmation
+    ↓
+Reschedule if Required
