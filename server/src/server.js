@@ -7,6 +7,7 @@ const connectDatabase = require("./config/database");
 const userRoutes = require("./routes/userRoutes");
 const interviewRoutes = require("./routes/interviewRoutes");
 const availabilityRoutes = require("./routes/availabilityRoutes");
+const authRoutes = require("./routes/authRoutes");
 
 // Load environment variables from server/.env
 dotenv.config({
@@ -18,6 +19,8 @@ const app = express();
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/interviews", interviewRoutes);
 app.use(

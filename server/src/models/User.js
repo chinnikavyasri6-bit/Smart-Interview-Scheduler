@@ -16,9 +16,18 @@ const userSchema = new mongoose.Schema(
       trim: true
     },
 
+    passwordHash: {
+      type: String,
+      required: true
+    },
+
     role: {
       type: String,
-      enum: ["candidate", "recruiter", "interviewer"],
+      enum: [
+        "candidate",
+        "recruiter",
+        "interviewer"
+      ],
       required: true
     },
 
