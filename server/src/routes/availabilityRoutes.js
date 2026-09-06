@@ -7,7 +7,6 @@ const {
 } = require("../controllers/availabilityController");
 
 const validate = require("../middlewares/validate");
-
 const {
   createAvailabilitySchema
 } = require("../validators/availabilityValidator");
@@ -18,7 +17,6 @@ const {
 
 const router = express.Router();
 
-// Add availability - authenticated users
 router.post(
   "/",
   authenticate,
@@ -26,18 +24,16 @@ router.post(
   createAvailability
 );
 
-// Find common availability - authenticated users
-router.get(
-  "/common",
-  authenticate,
-  getCommonAvailability
-);
-
-// Get a user's availability - authenticated users
 router.get(
   "/user/:userId",
   authenticate,
   getUserAvailability
+);
+
+router.get(
+  "/common",
+  authenticate,
+  getCommonAvailability
 );
 
 module.exports = router;

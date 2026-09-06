@@ -330,6 +330,26 @@ const scheduleInterview = async (req, res) => {
   }
 };
 
+const getInterviewSlots = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await schedulingService.findBestSlots(id);
+
+    return res.status(200).json({
+      success: true,
+      data: result
+    });
+  } catch (error) {
+    console.error("Get interview slots error:", error.message);
+
+    return res.status(400).json({
+      success: false,
+      message: error.message || "Failed to generate interview slots"
+    });
+  }
+};
+
 const confirmInterview = async (req, res) => {
   try {
     const { id } = req.params;
