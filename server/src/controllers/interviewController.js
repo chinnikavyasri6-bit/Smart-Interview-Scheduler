@@ -14,6 +14,14 @@ const {
   confirmInterviewSlot
 } = require("../services/confirmationService");
 
+const {
+  createInterviewNotifications
+} = require("../services/notificationService");
+
+const {
+  createInterviewConfirmationAuditLogs
+} = require("../services/auditService");
+
 const createInterview = async (req, res) => {
   try {
     const {
@@ -322,15 +330,28 @@ const confirmInterview = async (req, res) => {
         meetingLink
       });
 
+      const notifications =
+  await createInterviewNotifications({
+    interview
+  });
+
+  const auditLogs =
+  await createInterviewConfirmationAuditLogs({
+    interview,
+    confirmedBy: interview.recruiter._id
+  });
+
     res.status(200).json({
-      success: true,
-      message:
-        "Interview confirmed and calendar events created successfully",
-      data: {
-        interview,
-        calendarEvents
-      }
-    });
+  success: true,
+  message:
+    "Interview confirmed successfully",
+  data: {
+    interview,
+    calendarEvents,
+    notifications,
+    auditLogs
+  }
+});
 
   } catch (error) {
     console.error(
