@@ -330,26 +330,6 @@ const scheduleInterview = async (req, res) => {
   }
 };
 
-const getInterviewSlots = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const result = await schedulingService.findBestSlots(id);
-
-    return res.status(200).json({
-      success: true,
-      data: result
-    });
-  } catch (error) {
-    console.error("Get interview slots error:", error.message);
-
-    return res.status(400).json({
-      success: false,
-      message: error.message || "Failed to generate interview slots"
-    });
-  }
-};
-
 const confirmInterview = async (req, res) => {
   try {
     const { id } = req.params;
@@ -601,6 +581,102 @@ const rescheduleInterviewController =
     }
   };
 
+  const getInterviewSlots = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const interview = await Interview.findById(id);
+
+    if (!interview) {
+      return res.status(404).json({
+        success: false,
+        message: "Interview not found"
+      });
+    }
+
+    // Only the candidate assigned to this interview
+    // can view the proposed slots.
+    if (
+      req.user.role === "candidate" &&
+      interview.candidate.toString() !== req.user.userId
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "You do not have permission to view these slots"
+      });
+    }
+
+    // Recruiter can also view the slots.
+    if (
+      req.user.role === "interviewer" &&
+      !interview.interviewers.some(
+        (interviewerId) =>
+          interviewerId.toString() === req.user.userId
+      )
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "You do not have permission to view these slots"
+      });
+    }
+
+    if (
+      interview.status !== "scheduling" &&
+      interview.status !== "proposed"
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Interview is not currently being scheduled"
+      });
+    }
+
+    const rangeStart = req.query.start
+      ? new Date(req.query.start)
+      : new Date();
+
+    const rangeEnd = req.query.end
+      ? new Date(req.query.end)
+      : new Date(
+          rangeStart.getTime() + 7 * 24 * 60 * 60 * 1000
+        );
+
+    if (
+      Number.isNaN(rangeStart.getTime()) ||
+      Number.isNaN(rangeEnd.getTime())
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid scheduling date range"
+      });
+    }
+
+    const result = await generateInterviewSchedule({
+      interviewId: id,
+      rangeStart,
+      rangeEnd
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        interview: result.interview,
+        commonAvailability: result.commonAvailability,
+        generatedSlots: result.generatedSlots,
+        validSlots: result.validSlots,
+        rankedSlots: result.rankedSlots
+      }
+    });
+  } catch (error) {
+    console.error("Get interview slots error:", error.message);
+
+    return res.status(error.statusCode || 500).json({
+      success: false,
+      message:
+        error.message || "Failed to generate interview slots"
+    });
+  }
+};
+
 module.exports = {
   createInterview,
   getInterviews,
@@ -608,5 +684,6 @@ module.exports = {
   scheduleInterview,
   confirmInterview,
   rescheduleInterviewController,
-  cancelInterviewController
+  cancelInterviewController,
+  getInterviewSlots
 };

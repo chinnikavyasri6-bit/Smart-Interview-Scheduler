@@ -7,7 +7,8 @@ const {
   scheduleInterview,
   confirmInterview,
   rescheduleInterviewController,
-  cancelInterviewController
+  cancelInterviewController,
+  getInterviewSlots
 } = require("../controllers/interviewController");
 
 const validate = require("../middlewares/validate");
@@ -69,6 +70,12 @@ router.post(
   authenticate,
   authorizeRoles("recruiter"),
   cancelInterviewController
+);
+
+router.get(
+  "/:id/slots",
+  authenticate,
+  getInterviewSlots
 );
 
 // Get single interview - authenticated users
