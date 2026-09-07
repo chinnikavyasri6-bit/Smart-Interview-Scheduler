@@ -8,6 +8,7 @@ const userRoutes = require("./routes/userRoutes");
 const interviewRoutes = require("./routes/interviewRoutes");
 const availabilityRoutes = require("./routes/availabilityRoutes");
 const authRoutes = require("./routes/authRoutes");
+const googleAuthRoutes = require("./routes/googleAuthRoutes");
 
 // Load environment variables from server/.env
 dotenv.config({
@@ -27,6 +28,7 @@ app.use(
   "/api/availability",
   availabilityRoutes
 );
+app.use("/api/google", googleAuthRoutes);
 
 // Root route
 app.get("/", (req, res) => {

@@ -74,6 +74,16 @@ const interviewSchema = new mongoose.Schema(
       default: null
     },
 
+    googleCalendarEventId: {
+  type: String,
+  default: null
+},
+
+googleCalendarHtmlLink: {
+  type: String,
+  default: null
+},
+
     notes: {
       type: String,
       default: ""

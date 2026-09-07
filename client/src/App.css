@@ -6474,3 +6474,42 @@ body {
     height: 36px;
   }
 }
+
+/* =========================
+   GLOBAL BACK BUTTON
+========================= */
+
+.global-back-button {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 9999;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  padding: 10px 16px;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+
+  background: #ffffff;
+  color: #1f2937;
+
+  font-size: 15px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.global-back-button:hover {
+  background: #f9fafb;
+  transform: translateX(-2px);
+}

@@ -23,11 +23,7 @@ const userSchema = new mongoose.Schema(
 
     role: {
       type: String,
-      enum: [
-        "candidate",
-        "recruiter",
-        "interviewer"
-      ],
+      enum: ["candidate", "recruiter", "interviewer"],
       required: true
     },
 
@@ -42,7 +38,6 @@ const userSchema = new mongoose.Schema(
         type: String,
         default: "09:00"
       },
-
       end: {
         type: String,
         default: "17:00"
@@ -52,6 +47,24 @@ const userSchema = new mongoose.Schema(
     googleCalendarConnected: {
       type: Boolean,
       default: false
+    },
+
+    googleAccessToken: {
+      type: String,
+      select: false,
+      default: null
+    },
+
+    googleRefreshToken: {
+      type: String,
+      select: false,
+      default: null
+    },
+
+    googleTokenExpiry: {
+      type: Number,
+      select: false,
+      default: null
     }
   },
   {

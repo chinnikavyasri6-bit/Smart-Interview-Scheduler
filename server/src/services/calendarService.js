@@ -1,45 +1,85 @@
 const CalendarEvent = require("../models/CalendarEvent");
+const {
+  createGoogleCalendarEvent
+} = require("./googleCalendarService");
 
 const createInterviewCalendarEvents = async ({
   interview,
-  meetingLink
+  meetingLink = null
 }) => {
-  const participantIds = [
-    interview.candidate,
-    interview.recruiter,
-    ...interview.interviewers
-  ];
+  /*
+   * The recruiter is the Google Calendar organizer.
+   * One real Google Calendar event is created with
+   * candidate + interviewers as attendees.
+   */
 
-  const events = [];
+  const recruiter = interview.recruiter;
 
-  for (const userId of participantIds) {
-    const event = await CalendarEvent.create({
-      user: userId,
-
-      externalEventId:
-        `internal-${interview._id}-${userId}`,
-
-      title: interview.title,
-
-      start: interview.selectedSlot.start,
-
-      end: interview.selectedSlot.end,
-
-      timezone: interview.timezone,
-
-      source: "manual",
-
-      status: "confirmed"
-    });
-
-    events.push(event);
+  if (!recruiter) {
+    throw new Error("Recruiter information is required");
   }
 
-  interview.meetingLink = meetingLink;
+  const googleEvent =
+    await createGoogleCalendarEvent({
+      interview,
+      recruiter
+    });
 
-  await interview.save();
+  const finalMeetingLink =
+    googleEvent.meetingLink || meetingLink;
 
-  return events;
+  const participants = [
+    interview.candidate,
+    recruiter,
+    ...(interview.interviewers || [])
+  ];
+
+  const calendarEvents = [];
+
+  for (const participant of participants) {
+    if (!participant?._id) {
+      continue;
+    }
+
+    const existingEvent =
+      await CalendarEvent.findOne({
+        user: participant._id,
+        externalEventId: googleEvent.eventId
+      });
+
+    if (existingEvent) {
+      calendarEvents.push(existingEvent);
+      continue;
+    }
+
+    const calendarEvent =
+      await CalendarEvent.create({
+        user: participant._id,
+
+        externalEventId:
+          googleEvent.eventId,
+
+        title: interview.title,
+
+        start: interview.selectedSlot.start,
+
+        end: interview.selectedSlot.end,
+
+        timezone: interview.timezone,
+
+        source: "google_calendar",
+
+        status: "confirmed"
+      });
+
+    calendarEvents.push(calendarEvent);
+  }
+
+  return {
+    calendarEvents,
+    googleEvent,
+    meetingLink: finalMeetingLink
+  };
 };
 
 module.exports = {

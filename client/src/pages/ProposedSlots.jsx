@@ -7,7 +7,9 @@ function ProposedSlots({ user, onBack, onLogout }) {
   const [slots, setSlots] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const [confirmingSlot, setConfirmingSlot] = useState(null);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const loadInterviews = async () => {
     try {
@@ -38,27 +40,70 @@ function ProposedSlots({ user, onBack, onLogout }) {
     try {
       setLoadingSlots(true);
       setError("");
+      setSuccess("");
       setSelectedInterview(interview);
 
-      /*
-       * We will connect this to the backend
-       * slot API next.
-       */
       const result = await api.get(
         `/interviews/${interview._id}/slots`
       );
 
       setSlots(
         result.data?.rankedSlots ||
-        result.data?.slots ||
-        result.data?.validSlots ||
-        []
+          result.data?.slots ||
+          result.data?.validSlots ||
+          []
       );
     } catch (err) {
       setSlots([]);
       setError(err.message || "Failed to load proposed slots");
     } finally {
       setLoadingSlots(false);
+    }
+  };
+
+  const chooseSlot = async (slot) => {
+    if (!selectedInterview) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Confirm this interview slot?\n\n${formatDate(
+        slot.start
+      )}\n${formatTime(slot.start)} – ${formatTime(
+        slot.end
+      )}\n\nThis will confirm the interview.`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setConfirmingSlot(`${slot.start}-${slot.end}`);
+      setError("");
+      setSuccess("");
+
+      await api.post(
+        `/interviews/${selectedInterview._id}/confirm`,
+        {
+          start: slot.start,
+          end: slot.end
+        }
+      );
+
+      setSuccess(
+        "Interview confirmed successfully! Calendar events and notifications have been created."
+      );
+
+      setSlots([]);
+
+      await loadInterviews();
+    } catch (err) {
+      setError(
+        err.message || "Failed to confirm the interview slot"
+      );
+    } finally {
+      setConfirmingSlot(null);
     }
   };
 
@@ -147,6 +192,12 @@ function ProposedSlots({ user, onBack, onLogout }) {
           </div>
         )}
 
+        {success && (
+          <div className="availability-success">
+            ✅ {success}
+          </div>
+        )}
+
         {/* INTERVIEW LIST */}
 
         <section className="proposed-interviews-section">
@@ -183,8 +234,8 @@ function ProposedSlots({ user, onBack, onLogout }) {
               </h3>
 
               <p>
-                When a recruiter generates interview slots,
-                they will appear here.
+                There are currently no interviews waiting
+                for your response.
               </p>
 
             </div>
@@ -297,6 +348,7 @@ function ProposedSlots({ user, onBack, onLogout }) {
 
             {loadingSlots ? (
               <div className="availability-empty">
+
                 <div className="availability-empty-icon">
                   ⚙️
                 </div>
@@ -309,6 +361,7 @@ function ProposedSlots({ user, onBack, onLogout }) {
                   Checking availability, conflicts,
                   working hours and time zones.
                 </p>
+
               </div>
             ) : slots.length === 0 ? (
               <div className="availability-empty">
@@ -330,69 +383,79 @@ function ProposedSlots({ user, onBack, onLogout }) {
             ) : (
               <div className="slots-list">
 
-                {slots.map((slot, index) => (
+                {slots.map((slot, index) => {
 
-                  <div
-                    className={`slot-card ${
-                      index === 0
-                        ? "recommended-slot"
-                        : ""
-                    }`}
-                    key={`${slot.start}-${slot.end}-${index}`}
-                  >
+                  const slotKey =
+                    `${slot.start}-${slot.end}`;
 
-                    {index === 0 && (
-                      <div className="recommended-label">
-                        ⭐ Best Match
+                  const isConfirming =
+                    confirmingSlot === slotKey;
+
+                  return (
+                    <div
+                      className={`slot-card ${
+                        index === 0
+                          ? "recommended-slot"
+                          : ""
+                      }`}
+                      key={`${slot.start}-${slot.end}-${index}`}
+                    >
+
+                      {index === 0 && (
+                        <div className="recommended-label">
+                          ⭐ Best Match
+                        </div>
+                      )}
+
+                      <div className="slot-date">
+
+                        <div className="slot-calendar-icon">
+                          📅
+                        </div>
+
+                        <div>
+                          <strong>
+                            {formatDate(slot.start)}
+                          </strong>
+
+                          <span>
+                            🕐 {formatTime(slot.start)}
+                            {" – "}
+                            {formatTime(slot.end)}
+                          </span>
+                        </div>
+
                       </div>
-                    )}
 
-                    <div className="slot-date">
+                      <div className="slot-score">
 
-                      <div className="slot-calendar-icon">
-                        📅
-                      </div>
+                        <small>
+                          Match Score
+                        </small>
 
-                      <div>
                         <strong>
-                          {formatDate(slot.start)}
+                          {slot.score ?? "—"}
                         </strong>
 
-                        <span>
-                          🕐 {formatTime(slot.start)}
-                          {" – "}
-                          {formatTime(slot.end)}
-                        </span>
                       </div>
 
+                      <button
+                        className="choose-slot-button"
+                        onClick={() =>
+                          chooseSlot(slot)
+                        }
+                        disabled={
+                          confirmingSlot !== null
+                        }
+                      >
+                        {isConfirming
+                          ? "⏳ Confirming..."
+                          : "Choose this slot →"}
+                      </button>
+
                     </div>
-
-                    <div className="slot-score">
-
-                      <small>
-                        Match Score
-                      </small>
-
-                      <strong>
-                        {slot.score ?? "—"}
-                      </strong>
-
-                    </div>
-
-                    <button
-                      className="choose-slot-button"
-                      onClick={() => {
-                        alert(
-                          "Slot selection will be connected next."
-                        );
-                      }}
-                    >
-                      Choose this slot →
-                    </button>
-
-                  </div>
-
-                ))}
+                  );
+                })}
 
               </div>
             )}

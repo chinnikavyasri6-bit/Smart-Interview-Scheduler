@@ -33,6 +33,10 @@ const {
   cancelInterview
 } = require("../services/cancellationService");
 
+const {
+  sendInterviewConfirmationEmail
+} = require("../services/emailService");
+
 const createInterview = async (req, res) => {
   try {
     const {
@@ -369,7 +373,55 @@ const confirmInterview = async (req, res) => {
       });
     }
 
-    // Final confirmation of the selected slot
+    /*
+     * Load interview first so we can verify
+     * that the logged-in user is allowed to confirm it.
+     */
+    const interviewBeforeConfirmation =
+      await Interview.findById(id)
+        .populate("candidate", "name email role")
+        .populate("recruiter", "name email role")
+        .populate("interviewers", "name email role");
+
+    if (!interviewBeforeConfirmation) {
+      return res.status(404).json({
+        success: false,
+        message: "Interview not found"
+      });
+    }
+
+    const currentUserId =
+      req.user.userId.toString();
+
+    const isRecruiter =
+      interviewBeforeConfirmation.recruiter?._id
+        ?.toString() === currentUserId;
+
+    const isCandidate =
+      interviewBeforeConfirmation.candidate?._id
+        ?.toString() === currentUserId;
+
+    const isInterviewer =
+      interviewBeforeConfirmation.interviewers?.some(
+        (interviewer) =>
+          interviewer._id.toString() === currentUserId
+      );
+
+    if (
+      !isRecruiter &&
+      !isCandidate &&
+      !isInterviewer
+    ) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "You do not have permission to confirm this interview"
+      });
+    }
+
+    /*
+     * Confirm slot using existing scheduling logic.
+     */
     const interview =
       await confirmInterviewSlot({
         interviewId: id,
@@ -377,41 +429,120 @@ const confirmInterview = async (req, res) => {
         end
       });
 
-    // Generate an internal meeting link for now.
-    // This will later be replaced with Google Meet.
-    const meetingLink =
-      `http://localhost:5000/meet/${interview._id}`;
+    /*
+     * Populate again because confirmation may
+     * return a fresh document.
+     */
+    await interview.populate([
+      {
+        path: "candidate",
+        select: "name email role"
+      },
+      {
+        path: "recruiter",
+        select: "name email role"
+      },
+      {
+        path: "interviewers",
+        select: "name email role"
+      }
+    ]);
 
-    // Create calendar events for all participants
-    const calendarEvents =
+    /*
+     * Create Google Calendar event + Google Meet.
+     */
+    const calendarResult =
       await createInterviewCalendarEvents({
+        interview
+      });
+
+    const meetingLink =
+      calendarResult.meetingLink;
+
+    /*
+     * Save Google information on interview.
+     */
+    interview.meetingLink =
+      meetingLink;
+
+    interview.googleCalendarEventId =
+      calendarResult.googleEvent.eventId;
+
+    interview.googleCalendarHtmlLink =
+      calendarResult.googleEvent.htmlLink;
+
+    await interview.save();
+
+    const emailResults = [];
+
+const recipients = [
+  interview.candidate?.email,
+  ...(interview.interviewers || []).map(
+    (interviewer) => interviewer.email
+  )
+].filter(Boolean);
+
+for (const recipient of recipients) {
+  try {
+    const emailResult =
+      await sendInterviewConfirmationEmail({
+        recipient,
         interview,
         meetingLink
       });
 
-      const notifications =
-  await createInterviewNotifications({
-    interview
-  });
+    emailResults.push({
+      recipient,
+      success: true,
+      id: emailResult?.id || null
+    });
+  } catch (emailError) {
+    console.error(
+      `Email failed for ${recipient}:`,
+      emailError.message
+    );
 
-  const auditLogs =
-  await createInterviewConfirmationAuditLogs({
-    interview,
-    confirmedBy: interview.recruiter._id
-  });
+    emailResults.push({
+      recipient,
+      success: false,
+      error: emailError.message
+    });
+  }
+}
+
+    /*
+     * Create system notifications.
+     */
+    const notifications =
+      await createInterviewNotifications({
+        interview
+      });
+
+    /*
+     * Create audit logs.
+     */
+    const auditLogs =
+      await createInterviewConfirmationAuditLogs({
+        interview,
+        confirmedBy: currentUserId
+      });
 
     res.status(200).json({
   success: true,
-  message:
-    "Interview confirmed successfully",
+  message: "Interview confirmed successfully",
   data: {
     interview,
-    calendarEvents,
+    meetingLink,
+    googleCalendar: {
+      eventId: calendarResult.googleEvent.eventId,
+      htmlLink: calendarResult.googleEvent.htmlLink
+    },
+    calendarEvents: calendarResult.calendarEvents,
     notifications,
+    emails: emailResults,
     auditLogs
   }
 });
-
   } catch (error) {
     console.error(
       "Confirm interview error:",

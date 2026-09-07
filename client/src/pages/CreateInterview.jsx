@@ -45,6 +45,9 @@ function CreateInterview({
   const [confirmedInterview, setConfirmedInterview] =
     useState(null);
 
+  const [confirmingSlot, setConfirmingSlot] =
+    useState(null);
+
   useEffect(() => {
     loadUsers();
   }, []);
@@ -52,15 +55,19 @@ function CreateInterview({
   const loadUsers = async () => {
     try {
       setLoadingUsers(true);
+      setError("");
 
-      const result =
-        await api.get("/users");
+      const result = await api.get("/users");
 
-      setUsers(result.data || []);
+      const allUsers = Array.isArray(result.data)
+        ? result.data
+        : [];
+
+      setUsers(allUsers);
     } catch (err) {
       setError(
         err.message ||
-          "Failed to load users"
+          "Failed to load candidates and interviewers"
       );
     } finally {
       setLoadingUsers(false);
@@ -115,6 +122,11 @@ function CreateInterview({
       return;
     }
 
+    if (!title.trim()) {
+      setError("Please enter an interview title.");
+      return;
+    }
+
     try {
       setCreating(true);
 
@@ -165,6 +177,20 @@ function CreateInterview({
     if (!date) {
       setError(
         "Please select an interview date."
+      );
+      return;
+    }
+
+    if (!fromTime || !toTime) {
+      setError(
+        "Please select both start and end times."
+      );
+      return;
+    }
+
+    if (toTime <= fromTime) {
+      setError(
+        "Available Until must be later than Available From."
       );
       return;
     }
@@ -223,8 +249,24 @@ function CreateInterview({
   const handleConfirmSlot = async (
     slot
   ) => {
+    if (!slot?.start || !slot?.end || confirmingSlot) {
+      return;
+    }
+
+    const confirmed =
+      window.confirm(
+        `Confirm this interview slot?\\n\\n${formatSlot(
+          slot.start
+        )}`
+      );
+
+    if (!confirmed) {
+      return;
+    }
+
     setError("");
     setSuccess("");
+    setConfirmingSlot(slot.start);
 
     try {
       const result =
@@ -241,11 +283,11 @@ function CreateInterview({
           }
         );
 
-      const confirmed =
+      const confirmedInterviewData =
         result.data;
 
       setConfirmedInterview(
-        confirmed
+        confirmedInterviewData
       );
 
       setSuccess(
@@ -256,6 +298,8 @@ function CreateInterview({
         err.message ||
           "Failed to confirm interview"
       );
+    } finally {
+      setConfirmingSlot(null);
     }
   };
 
@@ -353,7 +397,11 @@ function CreateInterview({
                   required
                 >
                   <option value="">
-                    Select candidate
+                    {loadingUsers
+                      ? "Loading candidates..."
+                      : candidates.length === 0
+                      ? "No candidates found"
+                      : "Select candidate"}
                   </option>
 
                   {candidates.map(
@@ -494,36 +542,46 @@ function CreateInterview({
 
             <div className="interviewer-list">
 
-              {availableInterviewers.map(
-                (interviewer) => (
-                  <label
-                    className="interviewer-option"
-                    key={
-                      interviewer._id
-                    }
-                  >
-                    <input
-                      type="checkbox"
-                      checked={interviewers.includes(
+              {loadingUsers ? (
+                <p className="section-description">
+                  Loading interviewers...
+                </p>
+              ) : availableInterviewers.length === 0 ? (
+                <p className="section-description">
+                  No interviewers are available yet.
+                </p>
+              ) : (
+                availableInterviewers.map(
+                  (interviewer) => (
+                    <label
+                      className="interviewer-option"
+                      key={
                         interviewer._id
-                      )}
-                      onChange={() =>
-                        handleInterviewerChange(
-                          interviewer._id
-                        )
                       }
-                    />
+                    >
+                      <input
+                        type="checkbox"
+                        checked={interviewers.includes(
+                          interviewer._id
+                        )}
+                        onChange={() =>
+                          handleInterviewerChange(
+                            interviewer._id
+                          )
+                        }
+                      />
 
-                    <span>
-                      <strong>
-                        {interviewer.name}
-                      </strong>
+                      <span>
+                        <strong>
+                          {interviewer.name}
+                        </strong>
 
-                      <small>
-                        {interviewer.email}
-                      </small>
-                    </span>
-                  </label>
+                        <small>
+                          {interviewer.email}
+                        </small>
+                      </span>
+                    </label>
+                  )
                 )
               )}
 
@@ -551,7 +609,10 @@ function CreateInterview({
           <button
             className="primary-button"
             type="submit"
-            disabled={creating}
+            disabled={
+              creating ||
+              loadingUsers
+            }
           >
             {creating
               ? "Creating..."
@@ -721,8 +782,13 @@ function CreateInterview({
                             slot
                           )
                         }
+                        disabled={
+                          confirmingSlot !== null
+                        }
                       >
-                        Confirm
+                        {confirmingSlot === slot.start
+                          ? "Confirming..."
+                          : "Confirm"}
                       </button>
 
                     </div>

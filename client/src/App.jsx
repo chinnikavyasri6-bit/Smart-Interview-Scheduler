@@ -7,6 +7,19 @@ import CandidateDashboard from "./pages/CandidateDashboard";
 import InterviewerDashboard from "./pages/InterviewerDashboard";
 import Availability from "./pages/Availability";
 
+const BackButton = ({ onClick }) => {
+  return (
+    <button
+      type="button"
+      className="global-back-button"
+      onClick={onClick}
+      aria-label="Go back"
+    >
+      ← Back
+    </button>
+  );
+};
+
 function App() {
   const [page, setPage] = useState(() => {
     const savedUser = localStorage.getItem("user");
@@ -17,6 +30,16 @@ function App() {
 
     return "landing";
   });
+
+  const [pageHistory, setPageHistory] = useState(() => {
+  const savedUser = localStorage.getItem("user");
+
+  if (savedUser) {
+    return ["dashboard"];
+  }
+
+  return ["landing"];
+});
 
   const [user, setUser] = useState(() => {
     const savedUser = localStorage.getItem("user");
@@ -47,12 +70,45 @@ function App() {
   });
 
   const [registerData, setRegisterData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    role: "candidate",
-    timezone: "Asia/Kolkata"
+  name: "",
+  email: "",
+  password: "",
+  role: "candidate",
+  timezone: "Asia/Kolkata"
+});
+
+
+/* =========================
+   PAGE NAVIGATION HISTORY
+========================= */
+
+const navigateTo = (nextPage) => {
+  setPage(nextPage);
+
+  setPageHistory((previousHistory) => [
+    ...previousHistory,
+    nextPage
+  ]);
+};
+
+const goBack = () => {
+  setPageHistory((previousHistory) => {
+    if (previousHistory.length <= 1) {
+      return previousHistory;
+    }
+
+    const newHistory = previousHistory.slice(
+      0,
+      -1
+    );
+
+    setPage(
+      newHistory[newHistory.length - 1]
+    );
+
+    return newHistory;
   });
+};
 
   /* =========================
      INPUT HANDLERS

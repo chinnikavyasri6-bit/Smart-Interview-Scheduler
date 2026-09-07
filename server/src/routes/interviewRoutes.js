@@ -66,10 +66,10 @@ router.post(
 
 // Cancel - recruiter only
 router.post(
-  "/:id/cancel",
+  "/:id/confirm",
   authenticate,
-  authorizeRoles("recruiter"),
-  cancelInterviewController
+  authorizeRoles("recruiter", "candidate", "interviewer"),
+  confirmInterview
 );
 
 router.get(
