@@ -159,6 +159,9 @@ const goBack = () => {
       );
 
       setUser(loggedInUser);
+
+      // Start a fresh navigation history after login.
+      setPageHistory(["dashboard"]);
       setPage("dashboard");
 
     } catch (error) {
@@ -212,6 +215,9 @@ const goBack = () => {
       );
 
       setUser(registeredUser);
+
+      // Start a fresh navigation history after registration.
+      setPageHistory(["dashboard"]);
       setPage("dashboard");
 
     } catch (error) {
@@ -239,6 +245,8 @@ const goBack = () => {
     setUser(null);
     setAuthError("");
 
+    // Reset navigation after logout.
+    setPageHistory(["landing"]);
     setPage("landing");
   };
 
@@ -254,8 +262,8 @@ const goBack = () => {
     return (
       <CreateInterview
         user={user}
-        onBack={() => setPage("dashboard")}
-        onComplete={() => setPage("dashboard")}
+        onBack={goBack}
+        onComplete={goBack}
       />
     );
   }
@@ -284,7 +292,7 @@ const goBack = () => {
             className="nav-login"
             onClick={() => {
               setAuthError("");
-              setPage("login");
+              navigateTo("login");
             }}
           >
             Login
@@ -324,7 +332,7 @@ const goBack = () => {
               className="primary-btn"
               onClick={() => {
                 setAuthError("");
-                setPage("register");
+                navigateTo("register");
               }}
             >
               Get Started →
@@ -335,7 +343,7 @@ const goBack = () => {
               className="secondary-btn"
               onClick={() => {
                 setAuthError("");
-                setPage("login");
+                navigateTo("login");
               }}
             >
               Sign In
@@ -493,11 +501,13 @@ const goBack = () => {
         <div className="auth-brand">
 
           <button
-            className="back-button"
+            type="button"
+            className="global-back-button"
             onClick={() => {
               setAuthError("");
-              setPage("landing");
+              goBack();
             }}
+            aria-label="Go back"
           >
             ← Back
           </button>
@@ -677,7 +687,7 @@ const goBack = () => {
                 type="button"
                 onClick={() => {
                   setAuthError("");
-                  setPage("register");
+                  navigateTo("register");
                 }}
               >
                 Create one
@@ -706,7 +716,7 @@ if (
     <RecruiterDashboard
       user={user}
       onCreateInterview={() =>
-        setPage("create-interview")
+        navigateTo("create-interview")
       }
       onLogout={handleLogout}
     />
@@ -722,7 +732,7 @@ if (
   user={user}
   onLogout={handleLogout}
   onAvailability={() =>
-    setPage("availability")
+    navigateTo("availability")
   }
 />
   );
@@ -737,7 +747,7 @@ if (
   user={user}
   onLogout={handleLogout}
   onAvailability={() =>
-    setPage("availability")
+    navigateTo("availability")
   }
 />
   );
@@ -751,7 +761,7 @@ if (
     return (
       <Availability
         user={user}
-        onBack={() => setPage("dashboard")}
+        onBack={goBack}
         onLogout={handleLogout}
       />
     );
@@ -1263,11 +1273,13 @@ if (
       <div className="auth-brand">
 
         <button
-          className="back-button"
+          type="button"
+          className="global-back-button"
           onClick={() => {
             setAuthError("");
-            setPage("landing");
+            goBack();
           }}
+          aria-label="Go back"
         >
           ← Back
         </button>
@@ -1549,7 +1561,7 @@ if (
               type="button"
               onClick={() => {
                 setAuthError("");
-                setPage("login");
+                navigateTo("login");
               }}
             >
               Sign in

@@ -140,6 +140,7 @@ function Availability({ user, onBack, onLogout }) {
           </div>
 
           <button
+            type="button"
             className="availability-header-button"
             onClick={onLogout}
           >
@@ -155,9 +156,13 @@ function Availability({ user, onBack, onLogout }) {
 
       <main className="availability-main">
 
+        {/* BACK BUTTON */}
+
         <button
+          type="button"
           className="back-button"
           onClick={onBack}
+          aria-label="Go back to dashboard"
         >
           ← Back to Dashboard
         </button>

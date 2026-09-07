@@ -320,7 +320,8 @@ function CreateInterview({
 
         <div>
           <button
-            className="back-button"
+            type="button"
+            className="global-back-button"
             onClick={onBack}
           >
             ← Back

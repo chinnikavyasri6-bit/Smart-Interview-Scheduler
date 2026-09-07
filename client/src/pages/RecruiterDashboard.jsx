@@ -19,9 +19,55 @@ function RecruiterDashboard({
 
   const [actionLoading, setActionLoading] = useState(false);
 
+  const [googleConnected, setGoogleConnected] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleError, setGoogleError] = useState("");
+
   useEffect(() => {
     loadInterviews();
+    loadGoogleStatus();
+
+    const params = new URLSearchParams(window.location.search);
+    const googleStatus = params.get("google");
+
+    if (googleStatus === "connected") {
+      setGoogleConnected(true);
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (googleStatus === "error") {
+      setGoogleError("Google Calendar connection failed. Please try again.");
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
   }, []);
+
+  const loadGoogleStatus = async () => {
+    try {
+      const result = await api.get("/google/status");
+      setGoogleConnected(Boolean(result.data?.connected));
+    } catch (err) {
+      console.error("Google Calendar status error:", err);
+    }
+  };
+
+  const handleGoogleConnect = async () => {
+    try {
+      setGoogleLoading(true);
+      setGoogleError("");
+
+      const result = await api.get("/google/auth-url");
+      const authUrl = result.data?.url;
+
+      if (!authUrl) {
+        throw new Error("Google authorization URL was not returned");
+      }
+
+      window.location.href = authUrl;
+    } catch (err) {
+      setGoogleError(
+        err.message || "Failed to connect Google Calendar"
+      );
+      setGoogleLoading(false);
+    }
+  };
 
   const loadInterviews = async () => {
     try {
@@ -157,75 +203,20 @@ function RecruiterDashboard({
     }
   };
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case "confirmed":
-        return "✓";
-
-      case "cancelled":
-        return "×";
-
-      case "scheduling":
-        return "◌";
-
-      case "proposed":
-        return "◆";
-
-      case "completed":
-        return "✓";
-
-      case "rescheduling":
-        return "↻";
-
-      default:
-        return "•";
-    }
-  };
-
-  const getInterviewIcon = (type) => {
-    switch (type) {
-      case "technical":
-        return "💻";
-
-      case "hr":
-        return "🤝";
-
-      case "managerial":
-        return "👔";
-
-      case "behavioral":
-        return "🧠";
-
-      default:
-        return "🎯";
-    }
-  };
-
   return (
     <div className="recruiter-dashboard">
-
-      {/* =====================================================
-          HEADER
-          ===================================================== */}
 
       <header className="recruiter-header">
 
         <div className="recruiter-brand">
-
           <div className="brand-mark">
             IS
           </div>
 
           <div>
-            <h2>
-              SmartInterview
-            </h2>
-
-            <span>
-              Recruiter Portal
-            </span>
+            <h2>Interviewly</h2>
+            <span>Recruiter Portal</span>
           </div>
-
         </div>
 
         <div className="recruiter-user">
@@ -237,7 +228,6 @@ function RecruiterDashboard({
           </div>
 
           <div className="recruiter-user-info">
-
             <strong>
               {user?.name || "Recruiter"}
             </strong>
@@ -245,36 +235,27 @@ function RecruiterDashboard({
             <span>
               {user?.email}
             </span>
-
           </div>
 
           <button
             className="recruiter-logout"
             onClick={onLogout}
           >
-            🚪 Logout
+            Logout
           </button>
 
         </div>
 
       </header>
 
-
-      {/* =====================================================
-          MAIN
-          ===================================================== */}
-
       <main className="recruiter-main">
-
-        {/* WELCOME */}
 
         <section className="recruiter-welcome">
 
           <div>
-
             <p className="eyebrow">
-              🧑‍💼 Recruiter workspace
-            </p>
+  🧑‍💼 Recruiter workspace
+</p>
 
             <h1>
               Good morning,{" "}
@@ -283,31 +264,38 @@ function RecruiterDashboard({
             </h1>
 
             <p>
-              Manage your interviews, coordinate
-              participants and find the best
-              time automatically. ✨
+              Manage your interviews and
+              scheduling.
             </p>
-
           </div>
 
-          <button
-            className="create-interview-button"
-            onClick={onCreateInterview}
-          >
-            ➕ Create Interview
-          </button>
+          <div className="recruiter-header-actions">
+            <button
+              className="create-interview-button"
+              onClick={onCreateInterview}
+            >
+              ➕ Create Interview
+            </button>
+
+            <button
+              type="button"
+              className="calendar-connect-button"
+              onClick={handleGoogleConnect}
+              disabled={googleLoading || googleConnected}
+            >
+              {googleLoading
+                ? "Connecting..."
+                : googleConnected
+                  ? "✓ Google Calendar Connected"
+                  : "📅 Connect Google Calendar"}
+            </button>
+          </div>
 
         </section>
-
-
-        {/* =================================================
-            STATISTICS
-            ================================================= */}
 
         <section className="recruiter-stats">
 
           <div className="recruiter-stat-card">
-
             <span>
               📋 Total Interviews
             </span>
@@ -315,12 +303,9 @@ function RecruiterDashboard({
             <strong>
               {interviews.length}
             </strong>
-
           </div>
 
-
           <div className="recruiter-stat-card">
-
             <span>
               ✅ Confirmed
             </span>
@@ -333,12 +318,9 @@ function RecruiterDashboard({
                 ).length
               }
             </strong>
-
           </div>
 
-
           <div className="recruiter-stat-card">
-
             <span>
               ❌ Cancelled
             </span>
@@ -351,96 +333,41 @@ function RecruiterDashboard({
                 ).length
               }
             </strong>
-
-          </div>
-
-
-          <div className="recruiter-stat-card">
-
-            <span>
-              📅 Upcoming
-            </span>
-
-            <strong>
-              {
-                interviews.filter((item) => {
-                  if (
-                    item.status !== "confirmed" ||
-                    !item.selectedSlot
-                  ) {
-                    return false;
-                  }
-
-                  return (
-                    new Date(
-                      item.selectedSlot.start
-                    ) > new Date()
-                  );
-                }).length
-              }
-            </strong>
-
           </div>
 
         </section>
 
-
-        {/* =================================================
-            INTERVIEW MANAGEMENT
-            ================================================= */}
-
         <section>
 
           <div className="section-heading">
+            <h2>
+              Interviews
+            </h2>
 
-            <div>
-
-              <p className="eyebrow">
-                📊 Interview management
-              </p>
-
-              <h2>
-                🎯 Your Interviews
-              </h2>
-
-            </div>
-
-            <div className="interview-count">
-              {interviews.length}
-            </div>
-
+            <h1>
+  Manage your interviews 🚀
+</h1>
           </div>
-
-
-          {/* ERROR */}
 
           {error && (
             <div className="candidate-error">
-              ⚠️ {error}
+              {error}
             </div>
           )}
 
-
-          {/* LOADING */}
+          {googleError && (
+            <div className="candidate-error">
+              {googleError}
+            </div>
+          )}
 
           {loading ? (
-
             <div className="candidate-empty">
-
-              <div className="empty-icon">
-                ⏳
-              </div>
-
               <p>
                 Loading interviews...
               </p>
-
             </div>
-
           ) : interviews.length === 0 ? (
-
-            /* EMPTY STATE */
-
             <div className="candidate-empty">
 
               <div className="empty-icon">
@@ -453,22 +380,11 @@ function RecruiterDashboard({
 
               <p>
                 Create your first interview
-                to get started. 🚀
+                to get started.
               </p>
 
-              <button
-                className="create-interview-button"
-                onClick={onCreateInterview}
-              >
-                ➕ Create Your First Interview
-              </button>
-
             </div>
-
           ) : (
-
-            /* INTERVIEW LIST */
-
             <div className="recruiter-interview-list">
 
               {interviews.map((interview) => {
@@ -477,24 +393,19 @@ function RecruiterDashboard({
                   interview.selectedSlot;
 
                 return (
-
                   <div
                     className="recruiter-interview-card"
                     key={interview._id}
                   >
 
-                    {/* CARD HEADER */}
-
                     <div className="recruiter-card-top">
 
                       <div className="recruiter-card-icon">
-
-                        {getInterviewIcon(
-                          interview.interviewType
-                        )}
-
+                        {interview.interviewType ===
+                        "technical"
+                          ? "⌘"
+                          : "◆"}
                       </div>
-
 
                       <div className="recruiter-card-title">
 
@@ -508,42 +419,28 @@ function RecruiterDashboard({
 
                       </div>
 
-
                       <span className="recruiter-status">
-
-                        {getStatusIcon(
-                          interview.status
-                        )}{" "}
-
                         {interview.status}
-
                       </span>
 
                     </div>
 
-
-                    {/* CARD DETAILS */}
-
                     <div className="recruiter-card-details">
 
                       <div>
-
                         <small>
-                          👤 Candidate
+                          Candidate
                         </small>
 
                         <strong>
                           {interview.candidate?.name ||
                             "Candidate"}
                         </strong>
-
                       </div>
 
-
                       <div>
-
                         <small>
-                          📅 Date
+                          Date
                         </small>
 
                         <strong>
@@ -553,14 +450,11 @@ function RecruiterDashboard({
                               )
                             : "Not scheduled"}
                         </strong>
-
                       </div>
 
-
                       <div>
-
                         <small>
-                          🕐 Time
+                          Time
                         </small>
 
                         <strong>
@@ -572,30 +466,22 @@ function RecruiterDashboard({
                               )}`
                             : "Not scheduled"}
                         </strong>
-
                       </div>
 
-
                       <div>
-
                         <small>
-                          ⏱️ Duration
+                          Duration
                         </small>
 
                         <strong>
                           {interview.duration} min
                         </strong>
-
                       </div>
 
                     </div>
 
-
-                    {/* ACTIONS */}
-
                     {interview.status ===
                       "confirmed" && (
-
                       <div className="recruiter-card-footer">
 
                         <button
@@ -609,9 +495,8 @@ function RecruiterDashboard({
                             actionLoading
                           }
                         >
-                          🔄 Reschedule
+                          Reschedule
                         </button>
-
 
                         <button
                           className="danger-action"
@@ -624,12 +509,10 @@ function RecruiterDashboard({
                             actionLoading
                           }
                         >
-                          🗑️ Cancel
+                          Cancel
                         </button>
 
-
                         {interview.meetingLink && (
-
                           <a
                             className="join-button"
                             href={
@@ -638,35 +521,25 @@ function RecruiterDashboard({
                             target="_blank"
                             rel="noreferrer"
                           >
-                            🎥 Join Interview →
+                            Join →
                           </a>
-
                         )}
 
                       </div>
-
                     )}
 
                   </div>
-
                 );
               })}
 
             </div>
-
           )}
 
         </section>
 
       </main>
 
-
-      {/* =====================================================
-          RESCHEDULE MODAL
-          ===================================================== */}
-
       {rescheduleInterview && (
-
         <div className="modal-overlay">
 
           <div className="reschedule-modal">
@@ -676,35 +549,29 @@ function RecruiterDashboard({
               onClick={() =>
                 setRescheduleInterview(null)
               }
-              aria-label="Close reschedule dialog"
             >
               ×
             </button>
 
-
             <span className="eyebrow">
-              🔄 RESCHEDULE
+              RESCHEDULE
             </span>
-
 
             <h2>
               Choose a new time
             </h2>
 
-
             <p>
-              📌 {rescheduleInterview.title}
+              {rescheduleInterview.title}
             </p>
-
 
             <form
               onSubmit={handleReschedule}
             >
 
               <div className="form-group">
-
                 <label>
-                  📅 New Date
+                  New Date
                 </label>
 
                 <input
@@ -717,16 +584,13 @@ function RecruiterDashboard({
                   }
                   required
                 />
-
               </div>
-
 
               <div className="reschedule-time-grid">
 
                 <div className="form-group">
-
                   <label>
-                    🕐 Start
+                    Start
                   </label>
 
                   <input
@@ -739,14 +603,11 @@ function RecruiterDashboard({
                     }
                     required
                   />
-
                 </div>
 
-
                 <div className="form-group">
-
                   <label>
-                    🕐 End
+                    End
                   </label>
 
                   <input
@@ -759,11 +620,9 @@ function RecruiterDashboard({
                     }
                     required
                   />
-
                 </div>
 
               </div>
-
 
               <button
                 className="primary-button"
@@ -771,8 +630,8 @@ function RecruiterDashboard({
                 disabled={actionLoading}
               >
                 {actionLoading
-                  ? "⏳ Rescheduling..."
-                  : "✅ Confirm New Time"}
+                  ? "Rescheduling..."
+                  : "Confirm New Time"}
               </button>
 
             </form>
@@ -780,7 +639,6 @@ function RecruiterDashboard({
           </div>
 
         </div>
-
       )}
 
     </div>

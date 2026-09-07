@@ -162,11 +162,13 @@ function ProposedSlots({ user, onBack, onLogout }) {
       <main className="proposed-slots-main">
 
         <button
-          className="back-button"
-          onClick={onBack}
-        >
-          ← Back to Dashboard
-        </button>
+  type="button"
+  className="global-back-button"
+  onClick={onBack}
+  aria-label="Go back to dashboard"
+>
+  ← Back
+</button>
 
         <section className="proposed-slots-intro">
 
