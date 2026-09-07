@@ -6548,3 +6548,30 @@ body {
 .back-button:active {
   transform: translateX(0);
 }
+
+.availability-main .back-button {
+  display: inline-flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+
+  align-items: center;
+  gap: 8px;
+
+  padding: 10px 18px;
+  margin: 0 0 24px 0;
+
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+
+  background: #ffffff;
+  color: #374151;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+.availability-main .back-button:hover {
+  background: #f3f4f6;
+}

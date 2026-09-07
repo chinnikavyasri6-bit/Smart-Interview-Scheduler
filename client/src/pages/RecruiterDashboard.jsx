@@ -276,19 +276,7 @@ function RecruiterDashboard({
             >
               ➕ Create Interview
             </button>
-
-            <button
-              type="button"
-              className="calendar-connect-button"
-              onClick={handleGoogleConnect}
-              disabled={googleLoading || googleConnected}
-            >
-              {googleLoading
-                ? "Connecting..."
-                : googleConnected
-                  ? "✓ Google Calendar Connected"
-                  : "📅 Connect Google Calendar"}
-            </button>
+            
           </div>
 
         </section>
